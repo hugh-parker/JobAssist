@@ -1,4 +1,6 @@
 from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.model_selection import GridSearchCV
+import pickle
 import data_cleaning as dc
 
 def simple_get_skills(df, job_description, tfidf_vectorizer, skill_amt=5):
@@ -57,3 +59,44 @@ def model_get_skills(job_description, vectorizer, mlb, knn_model):
     
     # Step 4: Convert the tuple of skills to a list (since inverse_transform returns a list of tuples)
     return list(predicted_skills[0])
+
+def load_model(base_model, model_file_path, param_grid, X_train, y_train, scoring_metric, folds=5, force_reload=False):
+    """Load a model from disk if it exists, otherwise train a new model.
+    
+    Args:
+        base_model (Model): The base model to be used.
+        model_file_path (str): The file path to save the model.
+        param_grid (dict): The hyperparameter grid to search.
+        X_train (DataFrame): The training data.
+        y_train (DataFrame): The training labels.
+        scoring_metric (str): The scoring metric for the model.
+        folds (int): The number of folds for cross-validation. Default is 5.
+        force_reload (bool): Whether to force the model to be retrained. Default is False.
+        
+    Returns:
+        Model: The best model found."""
+    try:
+        # Force the model to be retrained
+        if force_reload:
+            raise ValueError('Forcing model reload.')
+        
+        # Load the model if it exists
+        with open(model_file_path, 'rb') as model_file:
+            best_model = pickle.load(model_file)
+        print('Model loaded from disk.')
+        return best_model
+    except (FileNotFoundError, ValueError):
+        grid_search = GridSearchCV(base_model, param_grid=param_grid, cv=folds, 
+                                   verbose=2, n_jobs = -1, 
+                                   scoring=scoring_metric,
+                                   error_score='raise')
+
+        # Fit the model on the training data
+        grid_search.fit(X_train, y_train)
+
+        # Get the best model and save it
+        best_model = grid_search.best_estimator_
+        with open(model_file_path, 'wb') as file:
+            pickle.dump(best_model, file)
+        print('Model trained and saved to disk.')
+        return best_model

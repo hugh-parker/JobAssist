@@ -1,11 +1,10 @@
 import string
 import re
-import pandas as pd
 
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
-from scipy.sparse import hstack, csr_matrix
+from scipy.sparse import hstack
 
 def preprocess_document(document, lemmatizer=WordNetLemmatizer()):
     """Apply NLP preprocessing to a given document.
@@ -33,23 +32,7 @@ def preprocess_document(document, lemmatizer=WordNetLemmatizer()):
 
     return ' '.join(document_tokens)
 
-def prepare_job_description(df, text_transformer):
-    """Prepare the job description column of the dataset.
-
-    Args:
-        df (_type_): _description_
-        text_transformer (_type_): _description_
-    """
-    # Apply document preprocessing
-    df['Job Description'] = df['Job Description'].apply(preprocess_document)
-    
-    # TF-IDF vecotrization cannot be applied to tokenized data
-    df['Job Description'] = df['Job Description'].apply(lambda x: ' '.join(x))
-    
-    # Vectorize text features
-    return hstack([text_transformer.transform(df['Job Description'])])
-
-def prepare_dataset(df, text_transformer, categorical_transformer, scaler):
+def prepare_dataset(df, text_transformer, categorical_transformer, scaler, text_feature_columns, categorical_feature_columns, numerical_feature_columns):
     """Prepare the dataset for training a machine learning model.
 
     Args:
@@ -57,31 +40,26 @@ def prepare_dataset(df, text_transformer, categorical_transformer, scaler):
         text_transformer (TfidfVectorizer): The text vectorizer to be used.
         categorical_transformer (OneHotEncoder): The categorical encoder to be used.
         scaler (StandardScaler): The numerical feature scaler to be used.
+        text_feature_columns (list): The text feature columns.
+        categorical_feature_columns (list): The categorical feature columns.
+        numerical_feature_columns (list): The numerical feature columns.
 
     Returns:
         X (scipy.sparse.csr.csr_matrix): The feature matrix.
     """
-    # Apply document preprocessing
-    df['Job Description'] = df['Job Description'].apply(preprocess_document)
-    df['Responsibilities'] = df['Responsibilities'].apply(preprocess_document)
-    
     # Vectorize text features
     text_features = hstack([text_transformer.transform(df[column]) for column in text_feature_columns])
     
     # One-hot encode categorical columns
-    categorical_feature_columns = ['Qualifications', 'Work Type', 'Preference', 'Job Title', 'Role']
     categorical_features = categorical_transformer.transform(df[categorical_feature_columns])
     
     # Scaling numerical features
-    # scaled_features = scaler.transform(df[['Company Size']])
-    scaled_features = csr_matrix(df[['Company Size']])
+    scaled_features = scaler.transform(df[numerical_feature_columns])
 
     # Concatenate all feature vectors
     X = hstack([text_features, categorical_features, scaled_features])
     
     return X
-
-import re
 
 def preprocess_skills(skills_str):
     """Preprocess the skills column.
