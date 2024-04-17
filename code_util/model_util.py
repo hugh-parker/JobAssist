@@ -98,5 +98,6 @@ def load_model(base_model, model_file_path, param_grid, X_train, y_train, scorin
         best_model = grid_search.best_estimator_
         with open(model_file_path, 'wb') as file:
             pickle.dump(best_model, file)
+        print(f'Best Parameters: {grid_search.best_params_}')
         print('Model trained and saved to disk.')
         return best_model
