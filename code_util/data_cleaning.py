@@ -1,7 +1,7 @@
 import string
 import re
 
-from nltk.tokenize import word_tokenize
+from nltk.tokenize import word_tokenize, RegexpTokenizer
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from scipy.sparse import hstack
@@ -16,21 +16,41 @@ def preprocess_document(document, lemmatizer=WordNetLemmatizer()):
     Returns:
         str: The preprocessed document.
     """     
-    # Convert to lower case
+    # Initialize the lemmatizer
+    lemmatizer = WordNetLemmatizer()
+
+    # Lowercase the document
     document = document.lower()
 
-    # # Remove stopwords
-    document_tokens = word_tokenize(document)
-    document_tokens = [word for word in document_tokens if word not in stopwords.words('english')]
-    
-    # Remove punctuation from tokens
-    extended_punctuation = string.punctuation + '“”‘’—'
-    document_tokens = [''.join(char for char in s if char not in extended_punctuation) for s in document_tokens]
-    
-    # Perform lemmatization
-    document_tokens = [lemmatizer.lemmatize(word) for word in document_tokens]
+    # Replace common contractions
+    contractions_dict = {
+        "can't": "cannot",
+        "won't": "will not",
+        "n't": " not",
+        "'re": " are",
+        "'s": " is",
+        "'d": " would",
+        "'ll": " will",
+        "'t": " not",
+        "'ve": " have",
+        "'m": " am"
+    }
+    pattern = re.compile(r'\b(' + '|'.join(contractions_dict.keys()) + r')\b')
+    document = pattern.sub(lambda x: contractions_dict[x.group()], document)
 
-    return ' '.join(document_tokens)
+    # Tokenize while removing punctuation
+    tokenizer = RegexpTokenizer(r'\w+')
+    tokens = tokenizer.tokenize(document)
+
+    # Remove stopwords
+    stop_words = set(stopwords.words('english'))
+    tokens = [word for word in tokens if word not in stop_words]
+
+    # Perform lemmatization
+    lemmatized_tokens = [lemmatizer.lemmatize(word) for word in tokens]
+
+    # Join the tokens back into a string
+    return ' '.join(lemmatized_tokens)
 
 def prepare_dataset(df, text_transformer, categorical_transformer, scaler, text_feature_columns, categorical_feature_columns, numerical_feature_columns):
     """Prepare the dataset for training a machine learning model.
