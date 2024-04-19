@@ -37,6 +37,32 @@ def simple_get_skills(df, job_description, tfidf_vectorizer, skill_amt=5):
     
     return recommended_skills
 
+def model_get_skills(job_description, vectorizer, mlb, knn_model):
+    """
+    Takes a raw job description, vectorizes it, predicts skills using a KNN model,
+    and returns the predicted skills as a list.
+
+    Args:
+        job_description (str): The raw job description to predict skills for.
+        vectorizer (TfidfVectorizer): The TfidfVectorizer used to transform the job description.
+        mlb (MultiLabelBinarizer): The MultiLabelBinarizer used to transform the predicted skills.
+        knn_model (KNeighborsClassifier): The KNN model used to predict the skills.
+    
+    Returns:
+        list: The predicted skills for the job description.
+    """
+    # Step 1: Preprocess the job description using the same vectorizer used during training
+    processed_description = vectorizer.transform([job_description])
+    
+    # Step 2: Use the trained KNN model to predict the skills
+    predicted_skills_binary = knn_model.predict(processed_description)
+    
+    # Step 3: Inverse transform the binary predictions back to skills using the label binarizer
+    predicted_skills = mlb.inverse_transform(predicted_skills_binary)
+    
+    # Step 4: Convert the tuple of skills to a list (since inverse_transform returns a list of tuples)
+    return list(predicted_skills[0])
+
 def load_model(base_model, model_file_path, param_grid, X_train, y_train, scoring_metric, folds=5, force_reload=False):
     """Load a model from disk if it exists, otherwise train a new model.
     
