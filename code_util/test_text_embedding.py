@@ -19,10 +19,10 @@ class TestTextEmbedding(unittest.TestCase):
             'Job Description': ['software engineer responsibilities include development'],
             'Preprocessed Job Description': ['software engineer responsibilities include development'],
             'Preprocessed Responsibilities': ['develop high quality software'],
-            'category1': ['tech'],  # Example categorical data
-            'category2': ['full-time'],  # Example categorical data
-            'num1': [5],  # Example numerical data
-            'num2': [10]  # Example numerical data
+            'category1': ['tech'],
+            'category2': ['full-time'],
+            'num1': [5],
+            'num2': [10]
         })
 
         # Transformers
